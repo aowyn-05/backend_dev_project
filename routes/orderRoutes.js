@@ -1,0 +1,11 @@
+const router = require('express').Router();
+const { body, param } = require('express-validator');
+const validate = require('../middleware/validate');
+const { protect, authorize } = require('../middleware/auth');
+const controller = require('../controllers/orderController');
+router.use(protect);
+router.post('/', authorize('customer'), [body('shippingAddress').trim().isLength({ min: 5 }), body('paymentStatus').optional().isIn(['Pending', 'Paid', 'Failed']), validate], controller.create);
+router.get('/my', authorize('customer'), controller.mine);
+router.get('/:id', [param('id').isMongoId(), validate], controller.get);
+router.put('/:id/status', authorize('seller', 'admin'), [param('id').isMongoId(), body('status').isIn(['Confirmed', 'Shipped', 'Delivered', 'Cancelled']), validate], controller.status);
+module.exports = router;

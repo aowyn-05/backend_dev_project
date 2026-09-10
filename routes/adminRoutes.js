@@ -1,0 +1,10 @@
+const router = require('express').Router();
+const { protect, authorize } = require('../middleware/auth');
+const controller = require('../controllers/adminController');
+const { param } = require('express-validator');
+const validate = require('../middleware/validate');
+router.use(protect, authorize('admin'));
+router.put('/sellers/:id/approve', [param('id').isMongoId(), validate], controller.approveSeller);
+router.get('/reports/sales', controller.sales);
+router.get('/reports/users', controller.users);
+module.exports = router;

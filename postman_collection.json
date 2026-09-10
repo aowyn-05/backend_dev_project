@@ -1,0 +1,42 @@
+{
+  "info": { "name": "Enterprise E-Commerce API", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json" },
+  "variable": [ { "key": "baseUrl", "value": "http://localhost:5000/api" }, { "key": "token", "value": "" }, { "key": "productId", "value": "000000000000000000000000" }, { "key": "categoryId", "value": "000000000000000000000000" }, { "key": "orderId", "value": "000000000000000000000000" }, { "key": "itemId", "value": "000000000000000000000000" } ],
+  "item": [
+    { "name": "Auth", "item": [
+      { "name": "Register Customer", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\"name\":\"Jane Customer\",\"email\":\"jane@example.com\",\"password\":\"Password123!\",\"address\":\"10 Main Street\"}"}, "url": "{{baseUrl}}/auth/register" } },
+      { "name": "Login", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\"email\":\"customer@example.com\",\"password\":\"Password123!\"}"}, "url": "{{baseUrl}}/auth/login" } }
+    ] },
+    { "name": "Catalog", "item": [
+      { "name": "Search Products", "request": { "method": "GET", "url": "{{baseUrl}}/products?keyword=headphones&minPrice=10&maxPrice=200&minRating=0&page=1&limit=10" } },
+      { "name": "List Categories", "request": { "method": "GET", "url": "{{baseUrl}}/categories" } },
+      { "name": "Create Product (Seller)", "request": { "method": "POST", "header": [{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\"name\":\"Mechanical Keyboard\",\"description\":\"RGB keyboard\",\"price\":79.99,\"categoryId\":\"{{categoryId}}\",\"stock\":20,\"images\":[]}"}, "url": "{{baseUrl}}/products" } },
+      { "name": "Update Product", "request": { "method": "PUT", "header": [{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\"price\":69.99,\"stock\":30}"}, "url": "{{baseUrl}}/products/{{productId}}" } },
+      { "name": "Delete Product", "request": { "method": "DELETE", "header": [{"key":"Authorization","value":"Bearer {{token}}"}], "url": "{{baseUrl}}/products/{{productId}}" } },
+      { "name": "Product Reviews", "request": { "method": "GET", "url": "{{baseUrl}}/products/{{productId}}/reviews" } },
+      { "name": "Leave Review", "request": { "method": "POST", "header": [{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\"rating\":5,\"comment\":\"Excellent product\"}"}, "url": "{{baseUrl}}/products/{{productId}}/reviews" } }
+    ] },
+    { "name": "Categories and Coupons", "item": [
+      { "name": "Create Category (Admin)", "request": { "method": "POST", "header": [{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\"name\":\"Accessories\",\"parentCategoryId\":null}"}, "url": "{{baseUrl}}/categories" } },
+      { "name": "Update Category (Admin)", "request": { "method": "PUT", "header": [{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\"name\":\"Computer Accessories\"}"}, "url": "{{baseUrl}}/categories/{{categoryId}}" } },
+      { "name": "Delete Category (Admin)", "request": { "method": "DELETE", "header": [{"key":"Authorization","value":"Bearer {{token}}"}], "url": "{{baseUrl}}/categories/{{categoryId}}" } },
+      { "name": "Apply Coupon", "request": { "method": "POST", "header": [{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\"code\":\"WELCOME10\",\"orderValue\":100}"}, "url": "{{baseUrl}}/coupons/apply" } },
+      { "name": "Create Coupon (Admin)", "request": { "method": "POST", "header": [{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\"code\":\"WELCOME10\",\"discountType\":\"percent\",\"value\":10,\"validTill\":\"2030-12-31T00:00:00.000Z\",\"minOrderValue\":50}"}, "url": "{{baseUrl}}/coupons" } }
+    ] },
+    { "name": "Cart and Orders", "item": [
+      { "name": "Get Cart", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{token}}"}], "url": "{{baseUrl}}/cart" } },
+      { "name": "Add Cart Item", "request": { "method": "POST", "header": [{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\"productId\":\"{{productId}}\",\"quantity\":2}"}, "url": "{{baseUrl}}/cart" } },
+      { "name": "Update Cart Item", "request": { "method": "PUT", "header": [{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\"quantity\":3}"}, "url": "{{baseUrl}}/cart/{{itemId}}" } },
+      { "name": "Remove Cart Item", "request": { "method": "DELETE", "header": [{"key":"Authorization","value":"Bearer {{token}}"}], "url": "{{baseUrl}}/cart/{{itemId}}" } },
+      { "name": "Place Order", "request": { "method": "POST", "header": [{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\"shippingAddress\":\"10 Main Street\",\"paymentStatus\":\"Paid\"}"}, "url": "{{baseUrl}}/orders" } },
+      { "name": "My Orders", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{token}}"}], "url": "{{baseUrl}}/orders/my" } },
+      { "name": "Order Detail", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{token}}"}], "url": "{{baseUrl}}/orders/{{orderId}}" } },
+      { "name": "Update Order Status", "request": { "method": "PUT", "header": [{"key":"Authorization","value":"Bearer {{token}}"},{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\"status\":\"Confirmed\"}"}, "url": "{{baseUrl}}/orders/{{orderId}}/status" } }
+    ] },
+    { "name": "Dashboards and Reports", "item": [
+      { "name": "Seller Dashboard", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{token}}"}], "url": "{{baseUrl}}/seller/dashboard" } },
+      { "name": "Approve Seller", "request": { "method": "PUT", "header": [{"key":"Authorization","value":"Bearer {{token}}"}], "url": "{{baseUrl}}/admin/sellers/{{orderId}}/approve" } },
+      { "name": "Sales Report", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{token}}"}], "url": "{{baseUrl}}/admin/reports/sales" } },
+      { "name": "User Growth Report", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{token}}"}], "url": "{{baseUrl}}/admin/reports/users" } }
+    ] }
+  ]
+}

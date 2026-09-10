@@ -1,0 +1,10 @@
+const router = require('express').Router();
+const { body, param } = require('express-validator');
+const validate = require('../middleware/validate');
+const { protect, authorize } = require('../middleware/auth');
+const controller = require('../controllers/categoryController');
+router.get('/', controller.list);
+router.post('/', protect, authorize('admin'), [body('name').trim().isLength({ min: 2 }), body('parentCategoryId').optional({ nullable: true }).isMongoId(), validate], controller.create);
+router.put('/:id', protect, authorize('admin'), [param('id').isMongoId(), body('name').optional().trim().isLength({ min: 2 }), body('parentCategoryId').optional({ nullable: true }).isMongoId(), validate], controller.update);
+router.delete('/:id', protect, authorize('admin'), [param('id').isMongoId(), validate], controller.remove);
+module.exports = router;

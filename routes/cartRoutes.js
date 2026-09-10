@@ -1,0 +1,11 @@
+const router = require('express').Router();
+const { body, param } = require('express-validator');
+const validate = require('../middleware/validate');
+const { protect, authorize } = require('../middleware/auth');
+const controller = require('../controllers/cartController');
+router.use(protect, authorize('customer'));
+router.get('/', controller.get);
+router.post('/', [body('productId').isMongoId(), body('quantity').isInt({ min: 1 }), validate], controller.add);
+router.put('/:itemId', [param('itemId').isMongoId(), body('quantity').isInt({ min: 1 }), validate], controller.update);
+router.delete('/:itemId', [param('itemId').isMongoId(), validate], controller.remove);
+module.exports = router;
