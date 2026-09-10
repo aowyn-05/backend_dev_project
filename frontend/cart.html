@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Cart — Marketplace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div id="nav"></div>
+<div class="page">
+  <h1>Your Cart</h1>
+  <div id="err" class="error-box d-none"></div>
+  <div id="cartItems"><p class="muted">Loading…</p></div>
+
+  <div class="card-flat" style="max-width:400px; margin-top:1.5rem;">
+    <div class="field">
+      <label>Coupon code</label>
+      <input id="couponCode" placeholder="e.g. WELCOME10" />
+    </div>
+    <button class="btn-outline" onclick="applyCoupon()">Apply coupon</button>
+    <p id="couponMsg" class="muted" style="margin-top:0.5rem;"></p>
+  </div>
+
+  <div style="margin-top:1.5rem; display:flex; justify-content:space-between; align-items:center; max-width:400px;">
+    <div>
+      <div class="muted">Total</div>
+      <div style="font-size:1.4rem; font-weight:700;" id="cartTotal">₹0</div>
+    </div>
+    <button class="btn-brand" onclick="window.location.href='checkout.html'">Checkout</button>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  requireAuth("customer");
+  renderNavbar("nav", "cart");
+  let appliedDiscount = 0;
+
+  async function loadCart() {
+    clearError("err");
+    try {
+      const data = await apiFetch("/cart");
+      const cart = data.data;
+      const items = cart.items || [];
+      if (!items.length) {
+        document.getElementById("cartItems").innerHTML = `<p class="muted">Your cart is empty. <a href="catalog.html">Browse products</a>.</p>`;
+        document.getElementById("cartTotal").textContent = "₹0";
+        return;
+      }
+      document.getElementById("cartItems").innerHTML = items.map(i => `
+        <div class="card-flat" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+          <div>
+            <div class="product-name">${i.productName || i.name || "Product"}</div>
+            <div class="muted">₹${i.price} each</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            <input type="number" min="1" value="${i.quantity}" style="width:70px;"
+              onchange="updateQty('${i._id || i.productId}', this.value)" />
+            <button class="btn-outline" onclick="removeItem('${i._id || i.productId}')">Remove</button>
+          </div>
+        </div>`).join("");
+
+      const total = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+      const finalTotal = Math.max(0, total - appliedDiscount);
+      document.getElementById("cartTotal").textContent = `₹${finalTotal}`;
+    } catch (e) { showError("err", e.message); }
+  }
+
+  async function updateQty(itemId, quantity) {
+    try {
+      await apiFetch(`/cart/${itemId}`, { method: "PUT", body: { quantity: parseInt(quantity, 10) } });
+      loadCart();
+    } catch (e) { showError("err", e.message); }
+  }
+
+  async function removeItem(itemId) {
+    try {
+      await apiFetch(`/cart/${itemId}`, { method: "DELETE" });
+      loadCart();
+    } catch (e) { showError("err", e.message); }
+  }
+
+  async function applyCoupon() {
+    const code = document.getElementById("couponCode").value.trim();
+    if (!code) return;
+    try {
+      const data = await apiFetch("/coupons/apply", { method: "POST", body: { code } });
+      appliedDiscount = data.data.discountAmount || 0;
+      document.getElementById("couponMsg").textContent = `Coupon applied: -₹${appliedDiscount}`;
+      loadCart();
+    } catch (e) {
+      document.getElementById("couponMsg").textContent = e.message;
+    }
+  }
+
+  loadCart();
+</script>
+</body>
+</html>

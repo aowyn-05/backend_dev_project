@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Product — Marketplace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div id="nav"></div>
+<div class="page">
+  <a href="catalog.html" class="muted">&larr; Back to catalog</a>
+  <div id="err" class="error-box d-none"></div>
+  <div id="product"><p class="muted">Loading…</p></div>
+
+  <h2 class="section-title">Reviews</h2>
+  <div id="reviews"></div>
+
+  <div id="reviewForm" class="card-flat d-none" style="margin-top:1rem; max-width:480px;">
+    <h3>Leave a review</h3>
+    <div class="field">
+      <label>Rating (1–5)</label>
+      <input id="rating" type="number" min="1" max="5" value="5" />
+    </div>
+    <div class="field"><label>Comment</label><textarea id="comment" rows="3"></textarea></div>
+    <button class="btn-brand" onclick="submitReview()">Submit review</button>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  renderNavbar("nav", "catalog");
+  const productId = new URLSearchParams(window.location.search).get("id");
+  const user = getUser();
+
+  async function loadProduct() {
+    try {
+      const data = await apiFetch(`/products/${productId}`, { auth: false });
+      const p = data.data;
+      document.getElementById("product").innerHTML = `
+        <h1>${p.name}</h1>
+        <p>${p.description || ""}</p>
+        <p class="price" style="font-size:1.4rem">₹${p.price}</p>
+        <p class="muted">${p.stock > 0 ? p.stock + " in stock" : "Out of stock"} · ★ ${p.ratingAvg ? p.ratingAvg.toFixed(1) : "—"}</p>
+        ${user && user.role === "customer"
+          ? `<div class="field" style="max-width:120px;"><label>Qty</label><input id="qty" type="number" value="1" min="1" /></div>
+             <button class="btn-brand" onclick="addToCart()">Add to cart</button>`
+          : `<p class="muted">Log in as a customer to purchase.</p>`}
+      `;
+      if (user && user.role === "customer") document.getElementById("reviewForm").classList.remove("d-none");
+    } catch (e) { showError("err", e.message); }
+  }
+
+  async function loadReviews() {
+    try {
+      const data = await apiFetch(`/products/${productId}/reviews`, { auth: false });
+      const items = data.data || [];
+      document.getElementById("reviews").innerHTML = items.length
+        ? items.map(r => `
+            <div class="card-flat" style="margin-bottom:0.75rem;">
+              <strong>★ ${r.rating}</strong> <span class="muted">— ${r.userName || "Customer"}</span>
+              <p style="margin:0.4rem 0 0;">${r.comment || ""}</p>
+            </div>`).join("")
+        : `<p class="muted">No reviews yet.</p>`;
+    } catch (e) { /* non-fatal */ }
+  }
+
+  async function addToCart() {
+    clearError("err");
+    const quantity = parseInt(document.getElementById("qty").value, 10) || 1;
+    try {
+      await apiFetch("/cart", { method: "POST", body: { productId, quantity } });
+      alert("Added to cart.");
+    } catch (e) { showError("err", e.message); }
+  }
+
+  async function submitReview() {
+    clearError("err");
+    const rating = parseInt(document.getElementById("rating").value, 10);
+    const comment = document.getElementById("comment").value.trim();
+    try {
+      await apiFetch(`/products/${productId}/reviews`, { method: "POST", body: { rating, comment } });
+      document.getElementById("comment").value = "";
+      loadReviews();
+    } catch (e) { showError("err", e.message); }
+  }
+
+  if (!productId) {
+    showError("err", "No product specified.");
+  } else {
+    loadProduct();
+    loadReviews();
+  }
+</script>
+</body>
+</html>

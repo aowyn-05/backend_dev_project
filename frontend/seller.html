@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Seller Dashboard — Marketplace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div id="nav"></div>
+<div class="page">
+  <h1>Seller Dashboard</h1>
+  <div id="err" class="error-box d-none"></div>
+
+  <h2 class="section-title">Add a product</h2>
+  <div class="card-flat" style="max-width:480px;">
+    <div class="field"><label>Name</label><input id="pName" /></div>
+    <div class="field"><label>Description</label><textarea id="pDesc" rows="2"></textarea></div>
+    <div class="field"><label>Price</label><input id="pPrice" type="number" /></div>
+    <div class="field"><label>Stock</label><input id="pStock" type="number" /></div>
+    <div class="field"><label>Category ID</label><input id="pCategory" placeholder="paste a category _id" /></div>
+    <button class="btn-brand" onclick="addProduct()">Add product</button>
+  </div>
+
+  <h2 class="section-title">Your products</h2>
+  <div id="myProducts" class="grid"><p class="muted">Loading…</p></div>
+
+  <h2 class="section-title">Pending orders for your listings</h2>
+  <div id="myOrders"><p class="muted">Loading…</p></div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  requireAuth("seller");
+  renderNavbar("nav", "seller");
+
+  async function addProduct() {
+    clearError("err");
+    const body = {
+      name: document.getElementById("pName").value.trim(),
+      description: document.getElementById("pDesc").value.trim(),
+      price: parseFloat(document.getElementById("pPrice").value),
+      stock: parseInt(document.getElementById("pStock").value, 10),
+      categoryId: document.getElementById("pCategory").value.trim(),
+    };
+    if (!body.name || !body.price || !body.categoryId) return showError("err", "Name, price, and category are required.");
+    try {
+      await apiFetch("/products", { method: "POST", body });
+      ["pName","pDesc","pPrice","pStock","pCategory"].forEach(id => document.getElementById(id).value = "");
+      loadMyProducts();
+    } catch (e) { showError("err", e.message); }
+  }
+
+  async function loadMyProducts() {
+    try {
+      const data = await apiFetch("/seller/dashboard");
+      const products = data.data.products || [];
+      document.getElementById("myProducts").innerHTML = products.length
+        ? products.map(p => `
+            <div class="product-card">
+              <div class="product-name">${p.name}</div>
+              <div class="price">₹${p.price}</div>
+              <div class="muted">${p.stock} in stock</div>
+            </div>`).join("")
+        : `<p class="muted">You haven't listed any products yet.</p>`;
+
+      const orders = data.data.pendingOrders || [];
+      document.getElementById("myOrders").innerHTML = orders.length
+        ? orders.map(o => `
+            <div class="card-flat" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+              <div>
+                <strong>Order #${o._id.slice(-6)}</strong>
+                <span class="badge-status status-${o.status}">${o.status}</span>
+              </div>
+              <select onchange="updateStatus('${o._id}', this.value)">
+                ${["Placed","Confirmed","Shipped","Delivered","Cancelled"].map(s =>
+                  `<option value="${s}" ${s === o.status ? "selected" : ""}>${s}</option>`).join("")}
+              </select>
+            </div>`).join("")
+        : `<p class="muted">No pending orders.</p>`;
+    } catch (e) { showError("err", e.message); }
+  }
+
+  async function updateStatus(orderId, status) {
+    try {
+      await apiFetch(`/orders/${orderId}/status`, { method: "PUT", body: { status } });
+      loadMyProducts();
+    } catch (e) { showError("err", e.message); }
+  }
+
+  loadMyProducts();
+</script>
+</body>
+</html>

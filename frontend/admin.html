@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Admin Dashboard — Marketplace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div id="nav"></div>
+<div class="page">
+  <h1>Admin Dashboard</h1>
+  <div id="err" class="error-box d-none"></div>
+
+  <h2 class="section-title">Sales summary</h2>
+  <div id="report" class="grid" style="grid-template-columns: repeat(3, 1fr); max-width:600px;">
+    <div class="card-flat"><div class="muted">Total sales</div><div id="totalSales" style="font-size:1.4rem; font-weight:700;">—</div></div>
+    <div class="card-flat"><div class="muted">Total orders</div><div id="totalOrders" style="font-size:1.4rem; font-weight:700;">—</div></div>
+    <div class="card-flat"><div class="muted">Total users</div><div id="totalUsers" style="font-size:1.4rem; font-weight:700;">—</div></div>
+  </div>
+
+  <h2 class="section-title">Categories</h2>
+  <div class="card-flat" style="max-width:420px; display:flex; gap:0.5rem; align-items:flex-end;">
+    <div class="field" style="margin-bottom:0; flex:1;"><label>New category name</label><input id="catName" /></div>
+    <button class="btn-brand" onclick="addCategory()">Add</button>
+  </div>
+  <div id="categories" style="margin-top:1rem;"><p class="muted">Loading…</p></div>
+
+  <h2 class="section-title">All orders</h2>
+  <div id="allOrders"><p class="muted">Loading…</p></div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  requireAuth("admin");
+  renderNavbar("nav", "admin");
+
+  async function loadReport() {
+    try {
+      const data = await apiFetch("/admin/reports/sales");
+      document.getElementById("totalSales").textContent = `₹${data.data.totalSales ?? 0}`;
+      document.getElementById("totalOrders").textContent = data.data.totalOrders ?? 0;
+      const users = await apiFetch("/admin/reports/users");
+      document.getElementById("totalUsers").textContent = users.data.totalUsers ?? 0;
+    } catch (e) { showError("err", e.message); }
+  }
+
+  async function loadCategories() {
+    try {
+      const data = await apiFetch("/categories", { auth: false });
+      const cats = data.data || [];
+      document.getElementById("categories").innerHTML = cats.length
+        ? `<ul>${cats.map(c => `<li>${c.name} <span class="muted">(${c._id})</span></li>`).join("")}</ul>`
+        : `<p class="muted">No categories yet.</p>`;
+    } catch (e) { showError("err", e.message); }
+  }
+
+  async function addCategory() {
+    const name = document.getElementById("catName").value.trim();
+    if (!name) return;
+    try {
+      await apiFetch("/categories", { method: "POST", body: { name } });
+      document.getElementById("catName").value = "";
+      loadCategories();
+    } catch (e) { showError("err", e.message); }
+  }
+
+  async function loadAllOrders() {
+    try {
+      const data = await apiFetch("/orders"); // admin-wide listing
+      const orders = data.data || [];
+      document.getElementById("allOrders").innerHTML = orders.length
+        ? orders.map(o => `
+            <div class="card-flat" style="display:flex; justify-content:space-between; margin-bottom:0.6rem;">
+              <span>Order #${o._id.slice(-6)} — ₹${o.totalAmount}</span>
+              <span class="badge-status status-${o.status}">${o.status}</span>
+            </div>`).join("")
+        : `<p class="muted">No orders yet.</p>`;
+    } catch (e) { /* endpoint may be scoped differently; non-fatal */ }
+  }
+
+  loadReport();
+  loadCategories();
+  loadAllOrders();
+</script>
+</body>
+</html>

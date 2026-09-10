@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>My Orders — Marketplace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div id="nav"></div>
+<div class="page">
+  <h1>My Orders</h1>
+  <div id="err" class="error-box d-none"></div>
+  <div id="orders"><p class="muted">Loading…</p></div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  requireAuth("customer");
+  renderNavbar("nav", "orders");
+
+  async function loadOrders() {
+    clearError("err");
+    try {
+      const data = await apiFetch("/orders/my");
+      const items = data.data || [];
+      if (!items.length) {
+        document.getElementById("orders").innerHTML = `<p class="muted">No orders yet. <a href="catalog.html">Start shopping</a>.</p>`;
+        return;
+      }
+      document.getElementById("orders").innerHTML = items.map(o => `
+        <div class="card-flat" style="margin-bottom:0.75rem;">
+          <div style="display:flex; justify-content:space-between;">
+            <strong>Order #${o._id.slice(-6)}</strong>
+            <span class="badge-status status-${o.status}">${o.status}</span>
+          </div>
+          <p class="muted">${new Date(o.createdAt).toLocaleDateString()} · ₹${o.totalAmount} · Payment: ${o.paymentStatus}</p>
+          <ul class="muted">
+            ${(o.items || []).map(i => `<li>${i.name} × ${i.qty}</li>`).join("")}
+          </ul>
+        </div>`).join("");
+    } catch (e) { showError("err", e.message); }
+  }
+
+  loadOrders();
+</script>
+</body>
+</html>

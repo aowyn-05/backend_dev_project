@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Catalog — Marketplace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div id="nav"></div>
+<div class="page">
+  <h1>Catalog</h1>
+
+  <div class="card-flat" style="display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:1.5rem;">
+    <div class="field" style="flex:2; min-width:200px; margin-bottom:0;">
+      <label>Search</label>
+      <input id="q" placeholder="Search products…" />
+    </div>
+    <div class="field" style="min-width:160px; margin-bottom:0;">
+      <label>Category</label>
+      <select id="category"><option value="">All</option></select>
+    </div>
+    <div class="field" style="min-width:100px; margin-bottom:0;">
+      <label>Min price</label>
+      <input id="minPrice" type="number" />
+    </div>
+    <div class="field" style="min-width:100px; margin-bottom:0;">
+      <label>Max price</label>
+      <input id="maxPrice" type="number" />
+    </div>
+    <div style="align-self:flex-end;">
+      <button class="btn-brand" onclick="loadProducts()">Filter</button>
+    </div>
+  </div>
+
+  <div id="err" class="error-box d-none"></div>
+  <div id="products" class="grid"><p class="muted">Loading products…</p></div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  renderNavbar("nav", "catalog");
+
+  async function loadCategories() {
+    try {
+      const data = await apiFetch("/categories", { auth: false });
+      const sel = document.getElementById("category");
+      (data.data || []).forEach((c) => {
+        const opt = document.createElement("option");
+        opt.value = c._id; opt.textContent = c.name;
+        sel.appendChild(opt);
+      });
+    } catch (e) { /* categories are optional for the filter bar */ }
+  }
+
+  async function loadProducts() {
+    clearError("err");
+    const params = new URLSearchParams();
+    const q = document.getElementById("q").value.trim();
+    const category = document.getElementById("category").value;
+    const minPrice = document.getElementById("minPrice").value;
+    const maxPrice = document.getElementById("maxPrice").value;
+    if (q) params.set("q", q);
+    if (category) params.set("categoryId", category);
+    if (minPrice) params.set("minPrice", minPrice);
+    if (maxPrice) params.set("maxPrice", maxPrice);
+
+    const container = document.getElementById("products");
+    container.innerHTML = `<p class="muted">Loading products…</p>`;
+    try {
+      const data = await apiFetch(`/products?${params.toString()}`, { auth: false });
+      const items = data.data || [];
+      if (!items.length) {
+        container.innerHTML = `<p class="muted">No products match those filters.</p>`;
+        return;
+      }
+      container.innerHTML = items.map(productCard).join("");
+    } catch (e) {
+      container.innerHTML = "";
+      showError("err", e.message);
+    }
+  }
+
+  function productCard(p) {
+    return `
+      <a class="product-card" href="product.html?id=${p._id}" style="text-decoration:none; color:inherit;">
+        <div class="product-name">${p.name}</div>
+        <div class="muted">${(p.description || "").slice(0, 60)}</div>
+        <div class="price">₹${p.price}</div>
+        <div class="muted">${p.stock > 0 ? p.stock + " in stock" : "Out of stock"} · ★ ${p.ratingAvg ? p.ratingAvg.toFixed(1) : "—"}</div>
+      </a>`;
+  }
+
+  loadCategories();
+  loadProducts();
+</script>
+</body>
+</html>

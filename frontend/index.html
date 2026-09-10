@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Marketplace — Log In</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div class="page-narrow">
+  <h1>Marketplace</h1>
+  <p class="muted">Sign in to browse, sell, or manage the catalog.</p>
+
+  <div id="err" class="error-box d-none"></div>
+
+  <!-- LOGIN -->
+  <div id="loginForm" class="card-flat">
+    <h3>Log in</h3>
+    <div class="field"><label>Email</label><input id="loginEmail" type="email" /></div>
+    <div class="field"><label>Password</label><input id="loginPassword" type="password" /></div>
+    <button class="btn-brand" onclick="doLogin()">Log in</button>
+    <p class="muted" style="margin-top:1rem">
+      No account? <a href="#" onclick="toggleForm('register')">Register here</a>
+    </p>
+  </div>
+
+  <!-- REGISTER -->
+  <div id="registerForm" class="card-flat d-none">
+    <h3>Create an account</h3>
+    <div class="field"><label>Name</label><input id="regName" /></div>
+    <div class="field"><label>Email</label><input id="regEmail" type="email" /></div>
+    <div class="field"><label>Password</label><input id="regPassword" type="password" /></div>
+    <div class="field">
+      <label>I am a</label>
+      <select id="regRole">
+        <option value="customer">Customer</option>
+        <option value="seller">Seller</option>
+      </select>
+    </div>
+    <button class="btn-brand" onclick="doRegister()">Create account</button>
+    <p class="muted" style="margin-top:1rem">
+      Already have an account? <a href="#" onclick="toggleForm('login')">Log in</a>
+    </p>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  // If already logged in, skip straight to the catalog
+  if (isLoggedIn()) window.location.href = "catalog.html";
+
+  function toggleForm(which) {
+    document.getElementById("loginForm").classList.toggle("d-none", which !== "login");
+    document.getElementById("registerForm").classList.toggle("d-none", which !== "register");
+    clearError("err");
+  }
+
+  async function doLogin() {
+    clearError("err");
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value;
+    if (!email || !password) return showError("err", "Enter your email and password.");
+    try {
+      const data = await apiFetch("/auth/login", { method: "POST", auth: false, body: { email, password } });
+      setSession(data.data.token, data.data.user);
+      window.location.href = "catalog.html";
+    } catch (e) { showError("err", e.message); }
+  }
+
+  async function doRegister() {
+    clearError("err");
+    const name = document.getElementById("regName").value.trim();
+    const email = document.getElementById("regEmail").value.trim();
+    const password = document.getElementById("regPassword").value;
+    const role = document.getElementById("regRole").value;
+    if (!name || !email || !password) return showError("err", "All fields are required.");
+    try {
+      const data = await apiFetch("/auth/register", { method: "POST", auth: false, body: { name, email, password, role } });
+      // If register auto-returns a token, log straight in; otherwise send them to log in.
+      if (data.data && data.data.token) {
+        setSession(data.data.token, data.data.user);
+        window.location.href = "catalog.html";
+      } else {
+        toggleForm("login");
+      }
+    } catch (e) { showError("err", e.message); }
+  }
+</script>
+</body>
+</html>

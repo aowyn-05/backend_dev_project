@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Checkout — Marketplace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div id="nav"></div>
+<div class="page-narrow">
+  <h1>Checkout</h1>
+  <div id="err" class="error-box d-none"></div>
+
+  <div id="confirmation" class="d-none card-flat" style="border-color: var(--success);">
+    <h3>Order placed!</h3>
+    <p class="muted" id="confirmText"></p>
+    <button class="btn-brand" onclick="window.location.href='orders.html'">View my orders</button>
+  </div>
+
+  <div id="checkoutForm" class="card-flat">
+    <h3>Shipping address</h3>
+    <div class="field"><label>Full name</label><input id="shipName" /></div>
+    <div class="field"><label>Address line</label><input id="shipAddress" /></div>
+    <div class="field"><label>City</label><input id="shipCity" /></div>
+    <div class="field"><label>Postal code</label><input id="shipPostal" /></div>
+    <div class="field"><label>Phone</label><input id="shipPhone" /></div>
+    <button class="btn-brand" onclick="placeOrder()">Place order</button>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  requireAuth("customer");
+  renderNavbar("nav", "cart");
+
+  async function placeOrder() {
+    clearError("err");
+    const shippingAddress = {
+      name: document.getElementById("shipName").value.trim(),
+      address: document.getElementById("shipAddress").value.trim(),
+      city: document.getElementById("shipCity").value.trim(),
+      postalCode: document.getElementById("shipPostal").value.trim(),
+      phone: document.getElementById("shipPhone").value.trim(),
+    };
+    if (!shippingAddress.name || !shippingAddress.address || !shippingAddress.city) {
+      return showError("err", "Please fill in your shipping details.");
+    }
+    try {
+      const data = await apiFetch("/orders", { method: "POST", body: { shippingAddress } });
+      document.getElementById("checkoutForm").classList.add("d-none");
+      document.getElementById("confirmation").classList.remove("d-none");
+      document.getElementById("confirmText").textContent =
+        `Order #${(data.data._id || "").slice(-6)} — total ₹${data.data.totalAmount || ""}`;
+    } catch (e) { showError("err", e.message); }
+  }
+</script>
+</body>
+</html>

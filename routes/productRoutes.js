@@ -6,6 +6,7 @@ const controller = require('../controllers/productController');
 const id = param('id').isMongoId();
 const productFields = [body('name').trim().isLength({ min: 2 }), body('description').isString().notEmpty(), body('price').isFloat({ min: 0 }), body('categoryId').isMongoId(), body('stock').isInt({ min: 0 }), body('images').optional().isArray()];
 router.get('/', [query('category').optional().isMongoId(), query('minPrice').optional().isFloat({ min: 0 }), query('maxPrice').optional().isFloat({ min: 0 }), query('minRating').optional().isFloat({ min: 0, max: 5 }), query('page').optional().isInt({ min: 1 }), query('limit').optional().isInt({ min: 1, max: 100 }), validate], controller.list);
+router.get('/:id', [id, validate], controller.getById);
 router.post('/', protect, authorize('seller'), [...productFields, validate], controller.create);
 router.put('/:id', protect, authorize('seller', 'admin'), [id, body('name').optional().trim().isLength({ min: 2 }), body('description').optional().isString(), body('price').optional().isFloat({ min: 0 }), body('categoryId').optional().isMongoId(), body('stock').optional().isInt({ min: 0 }), body('images').optional().isArray(), validate], controller.update);
 router.delete('/:id', protect, authorize('seller', 'admin'), [id, validate], controller.remove);

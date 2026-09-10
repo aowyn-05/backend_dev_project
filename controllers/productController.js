@@ -15,6 +15,14 @@ exports.list = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
+exports.getById = async (req, res, next) => {
+  try {
+    const product = await Product.findById(req.params.id).populate('categoryId', 'name').populate('sellerId', 'name');
+    if (!product) return res.status(404).json({ success: false, message: 'Product not found', errorCode: 'NOT_FOUND' });
+    res.json({ success: true, data: product });
+  } catch (error) { next(error); }
+};
+
 exports.create = async (req, res, next) => {
   try { const product = await Product.create({ ...req.body, sellerId: req.user._id }); res.status(201).json({ success: true, data: product }); } catch (error) { next(error); }
 };

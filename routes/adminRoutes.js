@@ -1,10 +1,12 @@
 const router = require('express').Router();
 const { protect, authorize } = require('../middleware/auth');
 const controller = require('../controllers/adminController');
-const { param } = require('express-validator');
+const { param, query } = require('express-validator');
 const validate = require('../middleware/validate');
 router.use(protect, authorize('admin'));
 router.put('/sellers/:id/approve', [param('id').isMongoId(), validate], controller.approveSeller);
+router.get('/orders', [query('page').optional().isInt({ min: 1 }), query('limit').optional().isInt({ min: 1, max: 100 }), validate], controller.orders);
+router.get('/users', [query('page').optional().isInt({ min: 1 }), query('limit').optional().isInt({ min: 1, max: 100 }), validate], controller.allUsers);
 router.get('/reports/sales', controller.sales);
 router.get('/reports/users', controller.users);
 module.exports = router;

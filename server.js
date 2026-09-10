@@ -1,10 +1,12 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 const morgan = require('morgan');
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(morgan('dev'));
 app.use((error, req, res, next) => { if (error instanceof SyntaxError && error.status === 400 && error.type === 'entity.parse.failed') return res.status(400).json({ success: false, message: 'Malformed JSON body', errorCode: 'VALIDATION_ERROR' }); next(error); });
